@@ -15,6 +15,9 @@ export default function TradeSimulatorApp() {
   const [coinsList, setCoinsList] = useState([]);
   const [selectedCoin, setSelectedCoin] = useState("bitcoin");
   const [riskMode, setRiskMode] = useState("%");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [darkMode, setDarkMode] = useState(true);
+  const [lang, setLang] = useState("es");
 
   useEffect(() => {
     const savedHistory = localStorage.getItem("lag-history");
@@ -61,6 +64,10 @@ export default function TradeSimulatorApp() {
     return () => clearInterval(interval);
   }, [selectedCoin]);
 
+  const filteredCoins = coinsList.filter((coin) =>
+    coin.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const saveSimulation = (data) => {
     const timestamp = new Date().toLocaleString();
     const newEntry = { ...data, timestamp, coin: selectedCoin };
@@ -73,81 +80,39 @@ export default function TradeSimulatorApp() {
     setHistory([]);
     localStorage.removeItem("lag-history");
   };
+    const t = (es, en) => (lang === "es" ? es : en);
 
-  const handleCalculate = () => {
-    const cap = parseFloat(capital);
-    const riskP = parseFloat(riskPercent);
-    const riskU = parseFloat(riskUSDT);
-    const entry = parseFloat(entryPrice);
-    const slPerc = parseFloat(stopLossPercent);
-    const tpPerc = parseFloat(takeProfitPercent);
-
-    if (
-      isNaN(cap) || isNaN(entry) ||
-      isNaN(slPerc) || isNaN(tpPerc) ||
-      cap <= 0 || entry <= 0 || slPerc <= 0 || tpPerc <= 0
-    ) {
-      alert("Por favor, completá todos los campos obligatorios.");
-      return;
-    }
-
-    let riskAmount;
-    if (riskMode === "%") {
-      if (isNaN(riskP) || riskP <= 0) {
-        alert("Ingresá un % de riesgo válido.");
-        return;
-      }
-      riskAmount = (cap * riskP) / 100;
-    } else {
-      if (isNaN(riskU) || riskU <= 0) {
-        alert("Ingresá un monto de riesgo válido.");
-        return;
-      }
-      riskAmount = riskU;
-    }
-
-    const stopLossPrice = entry - (entry * slPerc / 100);
-    const takeProfitPrice = entry + (entry * tpPerc / 100);
-    const riskPerTrade = entry - stopLossPrice;
-
-    if (riskPerTrade <= 0) {
-      alert("El SL debe ser menor al precio de entrada.");
-      return;
-    }
-
-    const shares = Math.floor(riskAmount / riskPerTrade);
-    const positionSize = shares * entry;
-    const potentialLoss = shares * riskPerTrade;
-    const potentialGain = shares * (takeProfitPrice - entry);
-    const liquidationPrice = entry - (entry * 0.8);
-
-    const calc = {
-      stopLossPrice,
-      takeProfitPrice,
-      shares,
-      positionSize,
-      potentialLoss,
-      potentialGain,
-      liquidationPrice,
-    };
-
-    setResult(calc);
-    saveSimulation(calc);
-  };
   return (
-    <div style={{ padding: 16, fontFamily: "Arial", color: "#f1f1f1", backgroundColor: "#111", minHeight: "100vh" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 10 }}>Trade Simulator L.A.G.</h1>
-      <div style={{ fontSize: 12, color: "#aaa", marginBottom: 12 }}>
-        Precios en vivo desde CoinGecko – simulaciones en USDT
+    <div
+      style={{
+        padding: 16,
+        fontFamily: "Arial",
+        color: darkMode ? "#f1f1f1" : "#111",
+        backgroundColor: darkMode ? "#111" : "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      <h1 style={{ fontSize: 24, marginBottom: 10 }}>
+        Trade Simulator L.A.G.
+      </h1>
+
+      <div style={{ fontSize: 12, color: darkMode ? "#ccc" : "#555" }}>
+        {t("Precios en vivo desde CoinGecko", "Live prices from CoinGecko")} – USDT
       </div>
-      <div style={{ fontSize: 10, color: "#555", marginBottom: 20 }}>
-        Visitas: {visitCount} • Seleccionado: <b>{selectedCoin}</b> • Precio: <b>${prices[selectedCoin] || "..."}</b>
+
+      <div style={{ fontSize: 10, marginBottom: 20 }}>
+        {t("Visitas", "Visits")}: {visitCount} • <b>{selectedCoin}</b> – ${prices[selectedCoin] || "..."}
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <label>{t("Buscar cripto", "Search coin")}: </label>
+        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div style={{ marginBottom: 12 }}>
-        <label>Seleccionar criptomoneda: </label>
+        <label>{t("Seleccionar criptomoneda", "Select coin")}: </label>
         <select value={selectedCoin} onChange={(e) => setSelectedCoin(e.target.value)}>
-          {coinsList.map((coin) => (
+          {filteredCoins.map((coin) => (
             <option key={coin.id} value={coin.id}>
               {coin.name}
             </option>
@@ -155,85 +120,91 @@ export default function TradeSimulatorApp() {
         </select>
       </div>
 
-      <div style={{ marginBottom: 8 }}>
-        <label>Capital disponible (USDT): </label>
+      <div>
+        <label>{t("Capital disponible (USDT)", "Capital (USDT)")}: </label>
         <input value={capital} onChange={(e) => setCapital(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 8 }}>
-        <label>Modo riesgo: </label>
+      <div>
+        <label>{t("Modo riesgo", "Risk mode")}: </label>
         <select value={riskMode} onChange={(e) => setRiskMode(e.target.value)}>
-          <option value="%">% del capital</option>
-          <option value="$">Monto en USDT</option>
+          <option value="%">%</option>
+          <option value="$">USDT</option>
         </select>
       </div>
 
       {riskMode === "%" ? (
-        <div style={{ marginBottom: 8 }}>
-          <label>Riesgo (%): </label>
+        <div>
+          <label>{t("Riesgo (%)", "Risk (%)")}: </label>
           <input value={riskPercent} onChange={(e) => setRiskPercent(e.target.value)} />
         </div>
       ) : (
-        <div style={{ marginBottom: 8 }}>
-          <label>Riesgo (USDT): </label>
+        <div>
+          <label>{t("Riesgo (USDT)", "Risk (USDT)")}: </label>
           <input value={riskUSDT} onChange={(e) => setRiskUSDT(e.target.value)} />
         </div>
       )}
 
-      <div style={{ marginBottom: 8 }}>
-        <label>Precio de entrada (USDT): </label>
+      <div>
+        <label>{t("Precio de entrada", "Entry price")}: </label>
         <input value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 8 }}>
-        <label>Stop Loss (%): </label>
+      <div>
+        <label>{t("Stop Loss (%)", "Stop Loss (%)")}: </label>
         <input value={stopLossPercent} onChange={(e) => setStopLossPercent(e.target.value)} />
       </div>
 
-      <div style={{ marginBottom: 8 }}>
-        <label>Take Profit (%): </label>
+      <div>
+        <label>{t("Take Profit (%)", "Take Profit (%)")}: </label>
         <input value={takeProfitPercent} onChange={(e) => setTakeProfitPercent(e.target.value)} />
       </div>
 
-      <button onClick={handleCalculate} style={{ marginTop: 12, padding: "6px 16px" }}>
-        Calcular
-      </button>
-      <button onClick={() => setHelpVisible(!helpVisible)} style={{ marginLeft: 10 }}>
-        {helpVisible ? "Ocultar ayuda" : "Ayuda"}
-      </button>
-      <button onClick={clearHistory} style={{ marginLeft: 10 }}>
-        Borrar historial
-      </button>
+      <div style={{ marginTop: 10 }}>
+        <button onClick={handleCalculate}>{t("Calcular", "Calculate")}</button>
+        <button onClick={() => setHelpVisible(!helpVisible)} style={{ marginLeft: 8 }}>
+          {helpVisible ? t("Ocultar ayuda", "Hide Help") : t("Ayuda", "Help")}
+        </button>
+        <button onClick={clearHistory} style={{ marginLeft: 8 }}>
+          {t("Borrar historial", "Clear history")}
+        </button>
+        <button onClick={() => setDarkMode(!darkMode)} style={{ marginLeft: 8 }}>
+          {darkMode ? t("Modo claro", "Light mode") : t("Modo oscuro", "Dark mode")}
+        </button>
+        <button onClick={() => setLang(lang === "es" ? "en" : "es")} style={{ marginLeft: 8 }}>
+          {lang === "es" ? "EN" : "ES"}
+        </button>
+      </div>
 
       {helpVisible && (
-        <div style={{ marginTop: 10, fontSize: 13, background: "#222", padding: 10, borderRadius: 8 }}>
-          Ingresá tu capital, el riesgo deseado, precio de entrada y los porcentajes para SL y TP. El simulador calcula
-          cuánto podés perder o ganar por trade, cuántas unidades comprar y tu riesgo real. Los precios se obtienen en
-          tiempo real desde <a href="https://coingecko.com" target="_blank" rel="noreferrer">CoinGecko</a>.
+        <div style={{ marginTop: 12, fontSize: 13, background: darkMode ? "#222" : "#eee", padding: 10, borderRadius: 8 }}>
+          {t(
+            "Ingresá tu capital, el riesgo, precio de entrada y SL/TP. El simulador calcula posiciones, pérdidas y ganancias.",
+            "Enter your capital, risk, entry price and SL/TP. The simulator calculates position size, loss and profit."
+          )}
         </div>
       )}
 
       {result && (
         <div style={{ marginTop: 20, fontSize: 14 }}>
-          <h3>📊 Resultados:</h3>
-          <p>SL en: ${result.stopLossPrice.toFixed(2)}</p>
-          <p>TP en: ${result.takeProfitPrice.toFixed(2)}</p>
-          <p>Unidades a comprar: {result.shares}</p>
-          <p>Tamaño posición: ${result.positionSize.toFixed(2)}</p>
-          <p>Pérdida potencial: ${result.potentialLoss.toFixed(2)}</p>
-          <p>Ganancia potencial: ${result.potentialGain.toFixed(2)}</p>
-          <p>Precio de liquidación (estimado): ${result.liquidationPrice.toFixed(2)}</p>
+          <h3>{t("📊 Resultados", "📊 Results")}:</h3>
+          <p>{t("SL en", "SL at")}: ${result.stopLossPrice.toFixed(2)}</p>
+          <p>{t("TP en", "TP at")}: ${result.takeProfitPrice.toFixed(2)}</p>
+          <p>{t("Unidades a comprar", "Units to buy")}: {result.shares}</p>
+          <p>{t("Tamaño posición", "Position size")}: ${result.positionSize.toFixed(2)}</p>
+          <p>{t("Pérdida potencial", "Potential loss")}: ${result.potentialLoss.toFixed(2)}</p>
+          <p>{t("Ganancia potencial", "Potential gain")}: ${result.potentialGain.toFixed(2)}</p>
+          <p>{t("Precio de liquidación estimado", "Estimated liquidation price")}: ${result.liquidationPrice.toFixed(2)}</p>
         </div>
       )}
 
       {history.length > 0 && (
         <div style={{ marginTop: 30, fontSize: 13 }}>
-          <h3>📁 Historial:</h3>
+          <h3>📁 {t("Historial", "History")}:</h3>
           <ul>
             {history.map((h, i) => (
               <li key={i}>
-                {h.timestamp} – {h.coin} – Unidades: {h.shares} – SL: ${h.stopLossPrice.toFixed(2)} – TP: $
-                {h.takeProfitPrice.toFixed(2)}
+                {h.timestamp} – {h.coin} – SL: ${h.stopLossPrice.toFixed(2)} – TP: ${h.takeProfitPrice.toFixed(2)}
               </li>
             ))}
           </ul>
@@ -241,7 +212,7 @@ export default function TradeSimulatorApp() {
       )}
 
       <div style={{ fontSize: 10, marginTop: 40, opacity: 0.5 }}>
-        L.A.G. Simulador de Riesgo • Precios provistos por CoinGecko – uso informativo y educativo.
+        L.A.G. Trade Simulator • {t("Precios por", "Prices via")}: CoinGecko • {t("Uso educativo", "Educational use only")}
       </div>
     </div>
   );
