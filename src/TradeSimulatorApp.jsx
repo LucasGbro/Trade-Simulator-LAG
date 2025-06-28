@@ -19,7 +19,8 @@ export default function TradeSimulatorApp() {
   const [darkMode, setDarkMode] = useState(true);
   const [lang, setLang] = useState("es");
 
-  useEffect(() => {
+  const t = (es, en) => (lang === "es" ? es : en);
+    useEffect(() => {
     const savedHistory = localStorage.getItem("lag-history");
     if (savedHistory) setHistory(JSON.parse(savedHistory));
 
@@ -80,9 +81,71 @@ export default function TradeSimulatorApp() {
     setHistory([]);
     localStorage.removeItem("lag-history");
   };
-    const t = (es, en) => (lang === "es" ? es : en);
+    const handleCalculate = () => {
+    const cap = parseFloat(capital);
+    const entry = parseFloat(entryPrice);
+    const slPercent = parseFloat(stopLossPercent);
+    const tpPercent = parseFloat(takeProfitPercent);
 
-  return (
+    if (
+      isNaN(cap) ||
+      isNaN(entry) ||
+      isNaN(slPercent) ||
+      isNaN(tpPercent) ||
+      cap <= 0 ||
+      entry <= 0
+    ) {
+      alert(t("Por favor, completa todos los campos correctamente.", "Please fill all fields correctly."));
+      return;
+    }
+
+    let riskAmount = 0;
+    if (riskMode === "%") {
+      const rPercent = parseFloat(riskPercent);
+      if (isNaN(rPercent) || rPercent <= 0 || rPercent > 100) {
+        alert(t("Ingresa un porcentaje de riesgo válido (0-100).", "Enter a valid risk percentage (0-100)."));
+        return;
+      }
+      riskAmount = (cap * rPercent) / 100;
+    } else {
+      const rUSDT = parseFloat(riskUSDT);
+      if (isNaN(rUSDT) || rUSDT <= 0 || rUSDT > cap) {
+        alert(t("Ingresa un monto de riesgo válido (mayor que 0 y menor o igual al capital).", "Enter a valid risk amount (greater than 0 and less or equal to capital)."));
+        return;
+      }
+      riskAmount = rUSDT;
+    }
+
+    const stopLossPrice = entry * (1 - slPercent / 100);
+    const takeProfitPrice = entry * (1 + tpPercent / 100);
+    const riskPerUnit = entry - stopLossPrice;
+    if (riskPerUnit <= 0) {
+      alert(t("Stop Loss debe estar por debajo del precio de entrada.", "Stop Loss must be below entry price."));
+      return;
+    }
+
+    const shares = Math.floor(riskAmount / riskPerUnit);
+    const positionSize = shares * entry;
+    const potentialLoss = shares * riskPerUnit;
+    const potentialGain = shares * (takeProfitPrice - entry);
+
+    // Estimación simple de liquidación (puede ajustarse según apalancamiento)
+    const liquidationPrice = stopLossPrice * 0.9;
+
+    const res = {
+      stopLossPrice,
+      takeProfitPrice,
+      shares,
+      positionSize,
+      potentialLoss,
+      potentialGain,
+      liquidationPrice,
+    };
+
+    setResult(res);
+    saveSimulation(res);
+  };
+    return (
     <div
       style={{
         padding: 16,
@@ -106,12 +169,21 @@ export default function TradeSimulatorApp() {
 
       <div style={{ marginBottom: 10 }}>
         <label>{t("Buscar cripto", "Search coin")}: </label>
-        <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder={t("Escribí para buscar...", "Type to search...")}
+          style={{ padding: "4px", width: "100%", maxWidth: 300 }}
+        />
       </div>
 
       <div style={{ marginBottom: 12 }}>
         <label>{t("Seleccionar criptomoneda", "Select coin")}: </label>
-        <select value={selectedCoin} onChange={(e) => setSelectedCoin(e.target.value)}>
+        <select
+          value={selectedCoin}
+          onChange={(e) => setSelectedCoin(e.target.value)}
+          style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+        >
           {filteredCoins.map((coin) => (
             <option key={coin.id} value={coin.id}>
               {coin.name}
@@ -119,74 +191,146 @@ export default function TradeSimulatorApp() {
           ))}
         </select>
       </div>
-
-      <div>
+            <div style={{ marginBottom: 8 }}>
         <label>{t("Capital disponible (USDT)", "Capital (USDT)")}: </label>
-        <input value={capital} onChange={(e) => setCapital(e.target.value)} />
+        <input
+          type="number"
+          value={capital}
+          onChange={(e) => setCapital(e.target.value)}
+          placeholder="1000"
+          style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+        />
       </div>
 
-      <div>
+      <div style={{ marginBottom: 8 }}>
         <label>{t("Modo riesgo", "Risk mode")}: </label>
-        <select value={riskMode} onChange={(e) => setRiskMode(e.target.value)}>
+        <select
+          value={riskMode}
+          onChange={(e) => setRiskMode(e.target.value)}
+          style={{ padding: "4px" }}
+        >
           <option value="%">%</option>
           <option value="$">USDT</option>
         </select>
       </div>
 
       {riskMode === "%" ? (
-        <div>
+        <div style={{ marginBottom: 8 }}>
           <label>{t("Riesgo (%)", "Risk (%)")}: </label>
-          <input value={riskPercent} onChange={(e) => setRiskPercent(e.target.value)} />
+          <input
+            type="number"
+            value={riskPercent}
+            onChange={(e) => setRiskPercent(e.target.value)}
+            placeholder="1.5"
+            style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+          />
         </div>
       ) : (
-        <div>
+        <div style={{ marginBottom: 8 }}>
           <label>{t("Riesgo (USDT)", "Risk (USDT)")}: </label>
-          <input value={riskUSDT} onChange={(e) => setRiskUSDT(e.target.value)} />
+          <input
+            type="number"
+            value={riskUSDT}
+            onChange={(e) => setRiskUSDT(e.target.value)}
+            placeholder="15"
+            style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+          />
         </div>
       )}
 
-      <div>
+      <div style={{ marginBottom: 8 }}>
         <label>{t("Precio de entrada", "Entry price")}: </label>
-        <input value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} />
+        <input
+          type="number"
+          value={entryPrice}
+          onChange={(e) => setEntryPrice(e.target.value)}
+          placeholder="30000"
+          style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+        />
       </div>
 
-      <div>
+      <div style={{ marginBottom: 8 }}>
         <label>{t("Stop Loss (%)", "Stop Loss (%)")}: </label>
-        <input value={stopLossPercent} onChange={(e) => setStopLossPercent(e.target.value)} />
+        <input
+          type="number"
+          value={stopLossPercent}
+          onChange={(e) => setStopLossPercent(e.target.value)}
+          placeholder="2"
+          style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+        />
       </div>
 
-      <div>
+      <div style={{ marginBottom: 16 }}>
         <label>{t("Take Profit (%)", "Take Profit (%)")}: </label>
-        <input value={takeProfitPercent} onChange={(e) => setTakeProfitPercent(e.target.value)} />
+        <input
+          type="number"
+          value={takeProfitPercent}
+          onChange={(e) => setTakeProfitPercent(e.target.value)}
+          placeholder="5"
+          style={{ padding: "4px", width: "100%", maxWidth: 320 }}
+        />
       </div>
+            <div style={{ marginBottom: 20 }}>
+        <button onClick={handleCalculate} style={{ padding: "8px 16px" }}>
+          {t("Calcular", "Calculate")}
+        </button>
 
-      <div style={{ marginTop: 10 }}>
-        <button onClick={handleCalculate}>{t("Calcular", "Calculate")}</button>
-        <button onClick={() => setHelpVisible(!helpVisible)} style={{ marginLeft: 8 }}>
+        <button
+          onClick={() => setHelpVisible(!helpVisible)}
+          style={{ marginLeft: 12, padding: "8px 16px" }}
+        >
           {helpVisible ? t("Ocultar ayuda", "Hide Help") : t("Ayuda", "Help")}
         </button>
-        <button onClick={clearHistory} style={{ marginLeft: 8 }}>
-          {t("Borrar historial", "Clear history")}
+
+        <button
+          onClick={clearHistory}
+          style={{ marginLeft: 12, padding: "8px 16px" }}
+        >
+          {t("Borrar historial", "Clear History")}
         </button>
-        <button onClick={() => setDarkMode(!darkMode)} style={{ marginLeft: 8 }}>
-          {darkMode ? t("Modo claro", "Light mode") : t("Modo oscuro", "Dark mode")}
+
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          style={{ marginLeft: 12, padding: "8px 16px" }}
+        >
+          {darkMode ? t("Modo claro", "Light Mode") : t("Modo oscuro", "Dark Mode")}
         </button>
-        <button onClick={() => setLang(lang === "es" ? "en" : "es")} style={{ marginLeft: 8 }}>
+
+        <button
+          onClick={() => setLang(lang === "es" ? "en" : "es")}
+          style={{ marginLeft: 12, padding: "8px 16px" }}
+        >
           {lang === "es" ? "EN" : "ES"}
         </button>
       </div>
 
       {helpVisible && (
-        <div style={{ marginTop: 12, fontSize: 13, background: darkMode ? "#222" : "#eee", padding: 10, borderRadius: 8 }}>
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 12,
+            backgroundColor: darkMode ? "#222" : "#eee",
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        >
           {t(
-            "Ingresá tu capital, el riesgo, precio de entrada y SL/TP. El simulador calcula posiciones, pérdidas y ganancias.",
-            "Enter your capital, risk, entry price and SL/TP. The simulator calculates position size, loss and profit."
+            "Ingrese capital, riesgo, precio de entrada y SL/TP. El simulador calcula tamaño de posición, pérdidas y ganancias.",
+            "Enter capital, risk, entry price and SL/TP. The simulator calculates position size, loss, and profit."
           )}
         </div>
       )}
 
       {result && (
-        <div style={{ marginTop: 20, fontSize: 14 }}>
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 16,
+            backgroundColor: darkMode ? "#222" : "#eee",
+            borderRadius: 8,
+            fontSize: 15,
+          }}
+        >
           <h3>{t("📊 Resultados", "📊 Results")}:</h3>
           <p>{t("SL en", "SL at")}: ${result.stopLossPrice.toFixed(2)}</p>
           <p>{t("TP en", "TP at")}: ${result.takeProfitPrice.toFixed(2)}</p>
@@ -199,7 +343,17 @@ export default function TradeSimulatorApp() {
       )}
 
       {history.length > 0 && (
-        <div style={{ marginTop: 30, fontSize: 13 }}>
+        <div
+          style={{
+            marginBottom: 20,
+            padding: 12,
+            backgroundColor: darkMode ? "#222" : "#eee",
+            borderRadius: 8,
+            fontSize: 13,
+            maxHeight: 200,
+            overflowY: "auto",
+          }}
+        >
           <h3>📁 {t("Historial", "History")}:</h3>
           <ul>
             {history.map((h, i) => (
@@ -211,7 +365,15 @@ export default function TradeSimulatorApp() {
         </div>
       )}
 
-      <div style={{ fontSize: 10, marginTop: 40, opacity: 0.5 }}>
+      <div
+        style={{
+          fontSize: 10,
+          opacity: 0.5,
+          marginTop: 30,
+          textAlign: "center",
+          userSelect: "none",
+        }}
+      >
         L.A.G. Trade Simulator • {t("Precios por", "Prices via")}: CoinGecko • {t("Uso educativo", "Educational use only")}
       </div>
     </div>
