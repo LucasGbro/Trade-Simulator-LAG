@@ -1,0 +1,175 @@
+import React, { useState } from "react";
+
+export default function TradeSimulatorApp() {
+  const [capital, setCapital] = useState("");
+  const [riskPercent, setRiskPercent] = useState("");
+  const [entryPrice, setEntryPrice] = useState("");
+  const [stopLossPrice, setStopLossPrice] = useState("");
+  const [result, setResult] = useState(null);
+
+  const handleCalculate = () => {
+    const cap = parseFloat(capital);
+    const risk = parseFloat(riskPercent);
+    const entry = parseFloat(entryPrice);
+    const stopLoss = parseFloat(stopLossPrice);
+
+    if (
+      isNaN(cap) ||
+      isNaN(risk) ||
+      isNaN(entry) ||
+      isNaN(stopLoss) ||
+      cap <= 0 ||
+      risk <= 0 ||
+      entry <= 0 ||
+      stopLoss <= 0
+    ) {
+      alert("Por favor, ingresa valores válidos y mayores a 0.");
+      return;
+    }
+
+    if (stopLoss >= entry) {
+      alert("El precio de stop loss debe ser menor que el precio de entrada.");
+      return;
+    }
+
+    const riskAmount = (cap * risk) / 100;
+    const riskPerShare = entry - stopLoss;
+    const shares = Math.floor(riskAmount / riskPerShare);
+    const positionSize = shares * entry;
+    const potentialLoss = shares * riskPerShare;
+
+    setResult({
+      riskAmount,
+      shares,
+      positionSize,
+      potentialLoss,
+    });
+  };
+
+  return (
+    <div
+      style={{
+        maxWidth: 420,
+        margin: "auto",
+        padding: 20,
+        backgroundImage: "url('https://media.giphy.com/media/3o7TKP9PNbE0jX4LZm/giphy.gif')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        borderRadius: 10,
+        backdropFilter: "blur(4px)",
+        backgroundColor: "rgba(255,255,255,0.85)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+      }}
+    >
+      <h2 style={{ textAlign: "center", marginBottom: 20 }}>
+        Trade Simulator L.A.G. 📊🚀
+      </h2>
+
+      <div>
+        <label>Capital disponible:</label>
+        <input
+          type="number"
+          value={capital}
+          onChange={(e) => setCapital(e.target.value)}
+          placeholder="Ej: 10000"
+          style={{
+            marginBottom: 10,
+            padding: 8,
+            width: "100%",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+      </div>
+      <div>
+        <label>% Riesgo por trade:</label>
+        <input
+          type="number"
+          value={riskPercent}
+          onChange={(e) => setRiskPercent(e.target.value)}
+          placeholder="Ej: 1"
+          style={{
+            marginBottom: 10,
+            padding: 8,
+            width: "100%",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+      </div>
+      <div>
+        <label>Precio de entrada:</label>
+        <input
+          type="number"
+          value={entryPrice}
+          onChange={(e) => setEntryPrice(e.target.value)}
+          placeholder="Ej: 50"
+          style={{
+            marginBottom: 10,
+            padding: 8,
+            width: "100%",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+      </div>
+      <div>
+        <label>Precio de stop loss:</label>
+        <input
+          type="number"
+          value={stopLossPrice}
+          onChange={(e) => setStopLossPrice(e.target.value)}
+          placeholder="Ej: 45"
+          style={{
+            marginBottom: 10,
+            padding: 8,
+            width: "100%",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+          }}
+        />
+      </div>
+
+      <button
+        onClick={handleCalculate}
+        style={{
+          backgroundColor: "#4CAF50",
+          color: "white",
+          padding: 10,
+          border: "none",
+          borderRadius: 6,
+          width: "100%",
+          marginTop: 10,
+          cursor: "pointer",
+          fontWeight: "bold",
+        }}
+      >
+        Calcular
+      </button>
+
+      {result && (
+        <div style={{ marginTop: 20 }}>
+          <h3>Resultados:</h3>
+          <p>🧮 Cuánto podés perder: <strong>${result.riskAmount.toFixed(2)}</strong></p>
+          <p>📈 Cantidad de acciones: <strong>{result.shares}</strong></p>
+          <p>💼 Tamaño de posición: <strong>${result.positionSize.toFixed(2)}</strong></p>
+          <p>🔻 Pérdida total potencial: <strong>${result.potentialLoss.toFixed(2)}</strong></p>
+        </div>
+      )}
+
+      {/* Marca de agua */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 10,
+          right: 10,
+          opacity: 0.25,
+          fontSize: 18,
+          fontWeight: "bold",
+        }}
+      >
+        L.A.G.
+      </div>
+    </div>
+  );
+}
