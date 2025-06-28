@@ -9,10 +9,41 @@ export default function TradeSimulatorApp() {
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [helpVisible, setHelpVisible] = useState(false);
+  const [prices, setPrices] = useState({ BTC: null, ETH: null });
+  const [visitCount, setVisitCount] = useState(0);
 
+  // Cargar historial desde localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("lag-history");
-    if (saved) setHistory(JSON.parse(saved));
+    const savedHistory = localStorage.getItem("lag-history");
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
+
+    // Contador de visitas localStorage
+    const visits = localStorage.getItem("lag-visit-count");
+    const newCount = visits ? parseInt(visits) + 1 : 1;
+    localStorage.setItem("lag-visit-count", newCount);
+    setVisitCount(newCount);
+  }, []);
+
+  // Traer precios reales de CoinGecko cada 30 seg
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+        );
+        const data = await res.json();
+        setPrices({
+          BTC: data.bitcoin.usd,
+          ETH: data.ethereum.usd,
+        });
+      } catch (e) {
+        console.error("Error fetching prices:", e);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const saveSimulation = (data) => {
@@ -75,13 +106,9 @@ export default function TradeSimulatorApp() {
           maxWidth: 420,
           margin: "auto",
           padding: 20,
-          backgroundImage: "url('https://media.giphy.com/media/WoD6JZnwap6s8/giphy.gif')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundColor: "#fff",
           borderRadius: 10,
-          backdropFilter: "blur(6px)",
-          backgroundColor: "rgba(255,255,255,0.95)",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
           color: "#222",
           fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         }}
@@ -89,6 +116,12 @@ export default function TradeSimulatorApp() {
         <h2 style={{ textAlign: "center", marginBottom: 20, color: "#111" }}>
           Trade Simulator L.A.G. 📊
         </h2>
+
+        <div style={{ marginBottom: 20 }}>
+          <strong>Precios en tiempo real (USD):</strong><br />
+          BTC: {prices.BTC ? `$${prices.BTC.toLocaleString()}` : "Cargando..."}<br />
+          ETH: {prices.ETH ? `$${prices.ETH.toLocaleString()}` : "Cargando..."}
+        </div>
 
         <Input label="Capital disponible (USDT)" value={capital} setValue={setCapital} placeholder="Ej: 1000" />
         <Input label="% de riesgo por trade" value={riskPercent} setValue={setRiskPercent} placeholder="Ej: 2" />
@@ -143,31 +176,26 @@ export default function TradeSimulatorApp() {
         }}>
           L.A.G.
         </div>
+
+        {/* Contador de visitas */}
+        <div style={{
+          position: "fixed",
+          bottom: 10,
+          left: 10,
+          fontSize: 14,
+          color: "#555",
+          userSelect: "none",
+          fontWeight: "600",
+        }}>
+          Visitas: {visitCount}
+        </div>
       </div>
 
       {/* Botón de ayuda */}
-      <button
-        onClick={() => setHelpVisible(true)}
-        aria-label="Abrir ayuda"
-        style={helpButtonStyle}
-      >
-        ❓
-      </button>
+      <HelpButton onClick={() => setHelpVisible(true)} />
 
       {/* Panel de ayuda */}
-      {helpVisible && (
-        <div style={helpPanelStyle}>
-          <div style={helpContentStyle}>
-            <h3>🆘 Ayuda - Trade Simulator L.A.G.</h3>
-            <button onClick={() => setHelpVisible(false)} style={closeButtonStyle} aria-label="Cerrar ayuda">✖</button>
-            <p><strong>SL (Stop Loss):</strong> Precio donde limitás la pérdida máxima.</p>
-            <p><strong>TP (Take Profit):</strong> Precio objetivo para ganar.</p>
-            <p><strong>Riesgo:</strong> Porcentaje del capital que estás dispuesto a perder en cada trade.</p>
-            <p><strong>Liquidación:</strong> Precio aproximado donde se cierra tu posición por falta de margen (futuros).</p>
-            <p>Completá los campos y presioná <em>"Calcular SL / TP"</em> para ver resultados.</p>
-          </div>
-        </div>
-      )}
+      {helpVisible && <HelpPanel onClose={() => setHelpVisible(false)} />}
     </>
   );
 }
@@ -210,58 +238,84 @@ const buttonStyle = {
   transition: "background-color 0.3s",
 };
 
-const helpButtonStyle = {
-  position: "fixed",
-  bottom: 20,
-  left: 20,
-  width: 50,
-  height: 50,
-  borderRadius: "50%",
-  border: "none",
-  backgroundColor: "#1976d2",
-  color: "white",
-  fontSize: 28,
-  fontWeight: "bold",
-  cursor: "pointer",
-  boxShadow: "0 3px 8px rgba(0,0,0,0.3)",
-  userSelect: "none",
-  zIndex: 1000,
-};
+const HelpButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    aria-label="Abrir ayuda"
+    style={{
+      position: "fixed",
+      bottom: 20,
+      left: 20,
+      width: 50,
+      height: 50,
+      borderRadius: "50%",
+      border: "none",
+      backgroundColor: "#1976d2",
+      color: "white",
+      fontSize: 28,
+      fontWeight: "bold",
+      cursor: "pointer",
+      boxShadow: "0 3px 8px rgba(0,0,0,0.3)",
+      userSelect: "none",
+      zIndex: 1000,
+    }}
+  >
+    ❓
+  </button>
+);
 
-const helpPanelStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0,0,0,0.6)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 1100,
-};
-
-const helpContentStyle = {
-  backgroundColor: "#fff",
-  padding: 25,
-  borderRadius: 10,
-  maxWidth: 400,
-  boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
-  color: "#222",
-  position: "relative",
-  fontSize: 15,
-  lineHeight: "1.5em",
-};
-
-const closeButtonStyle = {
-  position: "absolute",
-  top: 10,
-  right: 10,
-  border: "none",
-  background: "transparent",
-  fontSize: 20,
-  fontWeight: "bold",
-  cursor: "pointer",
-  color: "#444",
-  userSelect: "none",
-};
+const HelpPanel = ({ onClose }) => (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1100,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: "#fff",
+        padding: 25,
+        borderRadius: 10,
+        maxWidth: 400,
+        boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
+        color: "#222",
+        position: "relative",
+        fontSize: 15,
+        lineHeight: "1.5em",
+      }}
+    >
+      <h3>🆘 Ayuda - Trade Simulator L.A.G.</h3>
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          border: "none",
+          background: "transparent",
+          fontSize: 20,
+          fontWeight: "bold",
+          cursor: "pointer",
+          color: "#444",
+          userSelect: "none",
+        }}
+        aria-label="Cerrar ayuda"
+      >
+        ✖
+      </button>
+      <p><strong>SL (Stop Loss):</strong> Precio donde limitás la pérdida máxima.</p>
+      <p><strong>TP (Take Profit):</strong> Precio objetivo para ganar.</p>
+      <p><strong>Riesgo:</strong> Porcentaje del capital que estás dispuesto a perder en cada trade.</p>
+      <p><strong>Liquidación:</strong> Precio aproximado donde se cierra tu posición por falta de margen (futuros).</p>
+      <p>Completá los campos y presioná <em>"Calcular SL / TP"</em> para ver resultados.</p>
+    </div>
+  </div>
+);
