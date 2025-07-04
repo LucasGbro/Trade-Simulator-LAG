@@ -1,6 +1,8 @@
+import PriceChart from "./components/PriceChart";
 import React, { useState, useEffect } from "react";
 
 export default function TradeSimulatorApp() {
+const [showChart, setShowChart] = useState(false);
   const [capital, setCapital] = useState("");
   const [riskPercent, setRiskPercent] = useState("");
   const [riskUSDT, setRiskUSDT] = useState("");
@@ -158,6 +160,7 @@ export default function TradeSimulatorApp() {
       <h1 style={{ fontSize: 24, marginBottom: 10 }}>
         Trade Simulator L.A.G.
       </h1>
+      {showChart && <PriceChart coin={selectedCoin} />}
 
       <div style={{ fontSize: 12, color: darkMode ? "#ccc" : "#555" }}>
         {t("Precios en vivo desde CoinGecko", "Live prices from CoinGecko")} – USDT
@@ -317,6 +320,13 @@ export default function TradeSimulatorApp() {
         >
           {lang === "es" ? "EN" : "ES"}
         </button>
+              <button
+  onClick={() => setShowChart(!showChart)}
+  style={{ marginLeft: 12, padding: "8px 16px" }}
+>
+  {showChart ? t("Ocultar gráfico", "Hide Chart") : t("Ver gráfico", "Show Chart")}
+</button>
+
       </div>
 
       {helpVisible && (
