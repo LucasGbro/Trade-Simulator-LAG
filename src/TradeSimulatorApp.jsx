@@ -190,6 +190,21 @@ export default function TradeSimulatorApp() {
             </option>
           ))}
         </select>
+        {selectedCoin && (
+  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+    <img
+      src={coinsList.find((c) => c.id === selectedCoin)?.image}
+      alt="logo"
+      width={32}
+      height={32}
+      style={{ borderRadius: "50%" }}
+    />
+    <div>
+      <div><strong>{coinsList.find((c) => c.id === selectedCoin)?.symbol?.toUpperCase()}</strong></div>
+      <div>${prices[selectedCoin]?.toFixed(4) || "..."}</div>
+    </div>
+  </div>
+)}
       </div>
             <div style={{ marginBottom: 8 }}>
         <label>{t("Capital disponible (USDT)", "Capital (USDT)")}: </label>
