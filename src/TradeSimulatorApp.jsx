@@ -12,19 +12,39 @@ const TradeSimulatorApp = () => {
   const [tp, setTp] = useState("");
     const [result, setResult] = useState(null);
 
-  const handleSimulate = () => {
-    const risk = ((entry - sl) / entry) * 100;
-    const reward = ((tp - entry) / entry) * 100;
-    const liquidationPrice = entry - (entry / leverage);
-    const profit = ((tp - entry) * (capital * leverage)) / entry;
-    const loss = ((entry - sl) * (capital * leverage)) / entry;
+const handleSimulate = () => {
+  const entryNum = parseFloat(entry);
+  const tpNum = parseFloat(tp);
+  const slNum = parseFloat(sl);
+  const capitalNum = parseFloat(capital);
+  const leverageNum = parseFloat(leverage);
 
-    setResult({
-      risk: risk.toFixed(2),
-      reward: reward.toFixed(2),
-      liquidation: liquidationPrice.toFixed(4),
-      profit: profit.toFixed(2),
-      loss: loss.toFixed(2),
+  if (!entryNum || !tpNum || !slNum || !capitalNum || !leverageNum) {
+    alert("Por favor, completá todos los campos correctamente.");
+    return;
+  }
+
+  const positionSize = capitalNum * leverageNum;
+  const liquidation = (entryNum - (entryNum / leverageNum)).toFixed(2);
+  const gain = ((tpNum - entryNum) * positionSize) / entryNum;
+  const loss = ((entryNum - slNum) * positionSize) / entryNum;
+
+  const gainPct = ((tpNum - entryNum) / entryNum) * 100;
+  const lossPct = ((entryNum - slNum) / entryNum) * 100;
+
+  setResult({
+    sl: slNum.toFixed(2),
+    tp: tpNum.toFixed(2),
+    liq: liquidation,
+    gain: gain,
+    loss: loss,
+    gainPct: gainPct,
+    lossPct: lossPct,
+  });
+};
+  
+  });
+};
     });
   };  return (
     <div className="p-4 max-w-xl mx-auto bg-[#111] text-white rounded-xl shadow-lg">
@@ -90,11 +110,19 @@ const TradeSimulatorApp = () => {
         Simular Trade
       </button>
 
-      {coin && (
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-2 text-center">Gráfico de {coin}</h2>
-          <PriceChart coin={coin} timeframe={timeframe} />
-        </div>
+      <button
+  className="w-full mt-4 p-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+  onClick={() => setShowChart(!showChart)}
+>
+  {showChart ? "Ocultar Gráfico" : "Ver Gráfico"}
+</button>
+
+{showChart && (
+  <div className="mt-6">
+    <h2 className="text-lg font-semibold mb-2 text-center">Gráfico de {coin}</h2>
+    <PriceChart coin={coin} timeframe={timeframe} />
+  </div>
+)}
       )}
             {result && (
         <div className="mt-6 p-4 bg-[#1e1e1e] rounded text-sm space-y-2 border border-green-700">
