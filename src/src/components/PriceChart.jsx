@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { createChart } from "lightweight-charts";
 
 const PriceChart = () => {
-  const chartContainerRef = useRef(null);
+  const chartRef = useRef();
 
   useEffect(() => {
-    const chart = createChart(chartContainerRef.current, {
+    const chart = createChart(chartRef.current, {
       width: 360,
       height: 300,
       layout: {
@@ -33,17 +33,8 @@ const PriceChart = () => {
     return () => chart.remove();
   }, []);
 
-  return (
-    <div
-      ref={chartContainerRef}
-      style={{
-        width: "100%",
-        maxWidth: "400px",
-        height: "300px",
-        margin: "0 auto",
-      }}
-    />
-  );
+  return <div ref={chartRef} style={{ width: "100%", maxWidth: "400px", height: "300px", margin: "0 auto" }} />;
 };
 
 export default PriceChart;
+
