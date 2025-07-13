@@ -13,20 +13,16 @@ const PriceChart = ({ coin = "bitcoin", timeframe = "1" }) => {
       setError(null);
 
       try {
-        // CoinGecko API: market_chart
-        // timeframe: 1,7,30 días
-        const days = timeframe;
-        const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`;
+        const url = `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${timeframe}`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error("Error al obtener datos");
 
         const data = await res.json();
 
-        // data.prices es un array: [ [timestamp, price], ... ]
         const labels = data.prices.map((p) => {
           const date = new Date(p[0]);
-          return days <= 1
+          return timeframe <= 1
             ? date.toLocaleTimeString()
             : date.toLocaleDateString();
         });
@@ -56,6 +52,9 @@ const PriceChart = ({ coin = "bitcoin", timeframe = "1" }) => {
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+              legend: { display: true },
+            },
             scales: {
               x: {
                 ticks: {
@@ -67,10 +66,6 @@ const PriceChart = ({ coin = "bitcoin", timeframe = "1" }) => {
               y: {
                 beginAtZero: false,
               },
-            },
-            plugins: {
-              legend: { display: true },
-              tooltip: { mode: "index", intersect: false },
             },
           },
         });
@@ -85,7 +80,6 @@ const PriceChart = ({ coin = "bitcoin", timeframe = "1" }) => {
 
     fetchData();
 
-    // Cleanup al desmontar o cambiar coin/timeframe
     return () => {
       if (chartInstance) chartInstance.destroy();
     };
