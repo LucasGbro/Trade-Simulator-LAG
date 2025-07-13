@@ -1,64 +1,49 @@
 import React, { useEffect, useRef } from "react";
 import { createChart } from "lightweight-charts";
 
-const PriceChart = ({ coin = "bitcoin", timeframe = "1" }) => {
-  const chartContainerRef = useRef();
+const PriceChart = () => {
+  const chartContainerRef = useRef(null);
 
   useEffect(() => {
     const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
+      width: 360,
       height: 300,
       layout: {
         background: { color: "#111" },
-        textColor: "#ffffff",
+        textColor: "#fff",
       },
       grid: {
-        vertLines: { color: "#444" },
-        horzLines: { color: "#444" },
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
+        vertLines: { color: "#333" },
+        horzLines: { color: "#333" },
       },
     });
 
-    const lineSeries = chart.addLineSeries({
-      color: "#00FFAA",
-    });
+    const lineSeries = chart.addLineSeries({ color: "#0f0" });
 
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${timeframe}`
-        );
-        const data = await res.json();
-
-        const chartData = data.prices.map(([timestamp, price]) => ({
+    fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1")
+      .then((res) => res.json())
+      .then((data) => {
+        const prices = data.prices.map(([timestamp, price]) => ({
           time: Math.floor(timestamp / 1000),
           value: price,
         }));
+        lineSeries.setData(prices);
+      });
 
-        lineSeries.setData(chartData);
-      } catch (error) {
-        console.error("Error al cargar datos del gráfico:", error);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      chart.remove();
-    };
-  }, [coin, timeframe]);
+    return () => chart.remove();
+  }, []);
 
   return (
     <div
       ref={chartContainerRef}
-      style={{ width: "100%", height: "300px", marginTop: "1rem" }}
+      style={{
+        width: "100%",
+        maxWidth: "400px",
+        height: "300px",
+        margin: "0 auto",
+      }}
     />
   );
 };
 
 export default PriceChart;
-
-uso lightweight-charts para mostrar gráfico
