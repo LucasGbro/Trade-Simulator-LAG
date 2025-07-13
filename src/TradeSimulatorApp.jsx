@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import PriceChart from "./components/PriceChart";
 
 const TradeSimulatorApp = () => {
-  const [showChart, setShowChart] = useState(false);
-  const [timeframe, setTimeframe] = useState("1");
-  const [coin, setCoin] = useState("bitcoin");
   const [capital, setCapital] = useState(100);
   const [leverage, setLeverage] = useState(3);
   const [entry, setEntry] = useState("");
   const [sl, setSl] = useState("");
   const [tp, setTp] = useState("");
+  const [showChart, setShowChart] = useState(true);
   const [result, setResult] = useState(null);
 
   const handleSimulate = () => {
@@ -19,14 +17,8 @@ const TradeSimulatorApp = () => {
     const capitalNum = parseFloat(capital);
     const leverageNum = parseFloat(leverage);
 
-    if (
-      isNaN(entryNum) ||
-      isNaN(tpNum) ||
-      isNaN(slNum) ||
-      isNaN(capitalNum) ||
-      isNaN(leverageNum)
-    ) {
-      alert("Por favor, completá todos los campos correctamente.");
+    if (!entryNum || !tpNum || !slNum || !capitalNum || !leverageNum) {
+      alert("Completá todos los campos correctamente.");
       return;
     }
 
@@ -35,17 +27,12 @@ const TradeSimulatorApp = () => {
     const gain = ((tpNum - entryNum) * positionSize) / entryNum;
     const loss = ((entryNum - slNum) * positionSize) / entryNum;
 
-    const gainPct = ((tpNum - entryNum) / entryNum) * 100;
-    const lossPct = ((entryNum - slNum) / entryNum) * 100;
-
     setResult({
-      sl: slNum.toFixed(2),
-      tp: tpNum.toFixed(2),
       liq: liquidation,
-      gain,
-      loss,
-      gainPct,
-      lossPct,
+      gain: gain.toFixed(2),
+      loss: loss.toFixed(2),
+      gainPct: (((tpNum - entryNum) / entryNum) * 100).toFixed(2),
+      lossPct: (((entryNum - slNum) / entryNum) * 100).toFixed(2),
     });
   };
 
@@ -56,95 +43,63 @@ const TradeSimulatorApp = () => {
       <div className="grid grid-cols-2 gap-2 mb-4">
         <input
           className="p-2 bg-[#222] rounded"
-          placeholder="Token (ej: bitcoin)"
-          value={coin}
-          onChange={(e) => setCoin(e.target.value.toLowerCase())}
-        />
-        <select
-          className="p-2 bg-[#222] rounded"
-          value={timeframe}
-          onChange={(e) => setTimeframe(e.target.value)}
-        >
-          <option value="1">1D</option>
-          <option value="7">7D</option>
-          <option value="30">30D</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        <input
-          className="p-2 bg-[#222] rounded"
           placeholder="Capital (USDT)"
-          type="number"
-          min="1"
           value={capital}
           onChange={(e) => setCapital(e.target.value)}
         />
         <input
           className="p-2 bg-[#222] rounded"
-          placeholder="Apalancamiento (ej: 3)"
-          type="number"
-          min="1"
+          placeholder="Apalancamiento"
           value={leverage}
           onChange={(e) => setLeverage(e.target.value)}
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-4">
         <input
           className="p-2 bg-[#222] rounded"
-          placeholder="Precio de entrada"
-          type="number"
+          placeholder="Precio Entrada"
           value={entry}
           onChange={(e) => setEntry(e.target.value)}
         />
         <input
           className="p-2 bg-[#222] rounded"
           placeholder="Stop Loss"
-          type="number"
           value={sl}
           onChange={(e) => setSl(e.target.value)}
         />
-      </div>
-      <div className="mb-4">
         <input
-          className="w-full p-2 bg-[#222] rounded"
+          className="p-2 bg-[#222] rounded"
           placeholder="Take Profit"
-          type="number"
           value={tp}
           onChange={(e) => setTp(e.target.value)}
         />
       </div>
 
       <button
-        className="w-full p-2 bg-green-600 rounded hover:bg-green-700 transition"
+        className="w-full p-2 bg-green-600 rounded hover:bg-green-700"
         onClick={handleSimulate}
       >
-        Simular Trade
+        Simular
       </button>
 
       <button
-        className="w-full mt-4 p-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+        className="w-full mt-4 p-2 bg-blue-600 rounded hover:bg-blue-700"
         onClick={() => setShowChart(!showChart)}
       >
-        {showChart ? "Ocultar Gráfico" : "Ver Gráfico"}
+        {showChart ? "Ocultar Gráfico" : "Mostrar Gráfico"}
       </button>
 
       {showChart && (
         <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-2 text-center">Gráfico de {coin}</h2>
-          <PriceChart coin={coin} timeframe={timeframe} />
+          <h2 className="text-lg font-semibold text-center">Bitcoin (1D)</h2>
+          <PriceChart />
         </div>
       )}
 
       {result && (
-        <div className="mt-6 p-4 bg-[#1e1e1e] rounded text-sm space-y-2 border border-green-700">
-          <h3 className="text-base font-semibold text-green-500">📊 Resultado de la simulación</h3>
-          <p>SL: ${result.sl} ({result.lossPct?.toFixed(2) || result.lossPct}%)</p>
-          <p>TP: ${result.tp} ({result.gainPct?.toFixed(2) || result.gainPct}%)</p>
+        <div className="mt-6 p-4 bg-[#1e1e1e] rounded border border-green-600 text-sm space-y-1">
+          <h3 className="text-green-400 font-semibold">📊 Resultado</h3>
           <p>Liquidación: ${result.liq}</p>
-          <p>Pérdida: -{result.loss.toFixed(2)} USDT ({result.lossPct.toFixed(2)}%)</p>
-          <p>Ganancia: +{result.gain.toFixed(2)} USDT ({result.gainPct.toFixed(2)}%)</p>
+          <p>Ganancia: +{result.gain} USDT ({result.gainPct}%)</p>
+          <p>Pérdida: -{result.loss} USDT ({result.lossPct}%)</p>
         </div>
       )}
     </div>
