@@ -42,16 +42,18 @@ const TradeSimulatorApp = () => {
     });
   };
     return (
-      <div className="flex justify-between mb-4">
-  <h1 className="text-2xl font-bold">📈 Simulador de Trade</h1>
-  <button
-    onClick={() => setDarkMode(!darkMode)}
-    className={`px-2 py-1 rounded ${darkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-black"}`}
-  >
-    {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
-  </button>
-</div>
-      <div className={`p-4 max-w-xl mx-auto ${darkMode ? "bg-[#111] text-white" : "bg-white text-black"} rounded-xl shadow-lg min-h-screen`}>
+  <div className="p-4 max-w-xl mx-auto">
+    <div className="flex justify-between mb-4">
+      <h1 className="text-2xl font-bold">📈 Simulador de Trade</h1>
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className={`px-2 py-1 rounded ${darkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-black"}`}
+      >
+        {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
+      </button>
+    </div>
+
+    <div className={`p-4 max-w-xl mx-auto ${darkMode ? "bg-[#111] text-white" : "bg-white text-black"} rounded-xl shadow-lg min-h-screen`}>
       <h1 className="text-2xl font-bold mb-4 text-center">📈 Simulador de Trade</h1>
 
       <div className="grid grid-cols-2 gap-2 mb-4">
