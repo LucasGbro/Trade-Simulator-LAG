@@ -8,145 +8,164 @@ const TradeSimulatorApp = () => {
   const [leverage, setLeverage] = useState(3);
   const [entry, setEntry] = useState("");
   const [sl, setSl] = useState("");
-  const [tp, setTp] = useState("");
+  const [tp1, setTp1] = useState("");
+  const [tp2, setTp2] = useState("");
+  const [tp3, setTp3] = useState("");
   const [showChart, setShowChart] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   const [result, setResult] = useState(null);
+  const [darkMode, setDarkMode] = useState(true);
+  const [lang, setLang] = useState("es");
+
+  const t = (key) => {
+    const translations = {
+      es: {
+        simulator: "📈 Simulador de Trade",
+        token: "Token (ej: bitcoin)",
+        timeframe: "Temporalidad",
+        capital: "Capital (USDT)",
+        leverage: "Apalancamiento (ej: 3)",
+        entry: "Entrada",
+        stoploss: "Stop Loss",
+        takeprofit: "Take Profit",
+        simulate: "Simular Trade",
+        chart: "Ver gráfico",
+        hidechart: "Ocultar gráfico",
+        result: "📊 Resultado de la simulación",
+        sl: "🔻 Riesgo (SL)",
+        liq: "⚠️ Liquidación",
+        gain: "🟢 Ganancia",
+        loss: "🔴 Pérdida",
+        tp1: "TP1",
+        tp2: "TP2",
+        tp3: "TP3",
+      },
+      en: {
+        simulator: "📈 Trade Simulator",
+        token: "Token (e.g. bitcoin)",
+        timeframe: "Timeframe",
+        capital: "Capital (USDT)",
+        leverage: "Leverage (e.g. 3)",
+        entry: "Entry Price",
+        stoploss: "Stop Loss",
+        takeprofit: "Take Profit",
+        simulate: "Simulate Trade",
+        chart: "Show Chart",
+        hidechart: "Hide Chart",
+        result: "📊 Simulation Result",
+        sl: "🔻 Risk (SL)",
+        liq: "⚠️ Liquidation",
+        gain: "🟢 Gain",
+        loss: "🔴 Loss",
+        tp1: "TP1",
+        tp2: "TP2",
+        tp3: "TP3",
+      },
+    };
+    return translations[lang][key];
+  };
 
   const handleSimulate = () => {
     const entryPrice = parseFloat(entry);
     const slPrice = parseFloat(sl);
-    const tpPrice = parseFloat(tp);
     const cap = parseFloat(capital);
     const lev = parseFloat(leverage);
+    const tps = [tp1, tp2, tp3].map((tp) => parseFloat(tp)).filter(Boolean);
 
-    if (!entryPrice || !slPrice || !tpPrice || !cap || !lev) {
+    if (!entryPrice || !slPrice || !cap || !lev || tps.length === 0) {
       alert("Completa todos los campos correctamente.");
       return;
     }
 
-    const lossPct = ((entryPrice - slPrice) / entryPrice) * 100;
-    const gainPct = ((tpPrice - entryPrice) / entryPrice) * 100;
     const liquidation = entryPrice - entryPrice / lev;
+    const lossPct = ((entryPrice - slPrice) / entryPrice) * 100;
     const lossUSDT = ((entryPrice - slPrice) * cap * lev) / entryPrice;
-    const gainUSDT = ((tpPrice - entryPrice) * cap * lev) / entryPrice;
+
+    const gains = tps.map((tp) => {
+      const gainPct = ((tp - entryPrice) / entryPrice) * 100;
+      const gainUSDT = ((tp - entryPrice) * cap * lev) / entryPrice;
+      return { tp, gainPct, gainUSDT };
+    });
 
     setResult({
       sl: slPrice.toFixed(2),
-      tp: tpPrice.toFixed(2),
       liq: liquidation.toFixed(2),
-      loss: lossUSDT,
-      gain: gainUSDT,
-      lossPct,
-      gainPct,
+      loss: lossUSDT.toFixed(2),
+      lossPct: lossPct.toFixed(2),
+      gains,
     });
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
+    <div className={`p-4 max-w-xl mx-auto ${darkMode ? "bg-[#111] text-white" : "bg-white text-black"} rounded-xl shadow-lg min-h-screen`}>
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold">📈 Simulador de Trade</h1>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`px-2 py-1 rounded ${darkMode ? "bg-gray-700 text-white" : "bg-gray-200 text-black"}`}
+        <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-gray-700 text-sm rounded hover:opacity-80">
+          {darkMode ? "☀️ Light" : "🌙 Dark"}
+        </button>
+        <select
+          className="p-2 rounded bg-gray-700 text-sm"
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
         >
-          {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <h1 className="text-2xl font-bold mb-4 text-center">{t("simulator")}</h1>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <input className="p-2 bg-[#222] rounded" placeholder={t("token")} value={coin} onChange={(e) => setCoin(e.target.value)} />
+        <select className="p-2 bg-[#222] rounded" value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
+          <option value="1">1D</option>
+          <option value="7">7D</option>
+          <option value="30">30D</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <input className="p-2 bg-[#222] rounded" placeholder={t("capital")} value={capital} onChange={(e) => setCapital(e.target.value)} />
+        <input className="p-2 bg-[#222] rounded" placeholder={t("leverage")} value={leverage} onChange={(e) => setLeverage(e.target.value)} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <input className="p-2 bg-[#222] rounded" placeholder={t("entry")} value={entry} onChange={(e) => setEntry(e.target.value)} />
+        <input className="p-2 bg-[#222] rounded" placeholder={t("stoploss")} value={sl} onChange={(e) => setSl(e.target.value)} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <input className="p-2 bg-[#222] rounded" placeholder={t("tp1")} value={tp1} onChange={(e) => setTp1(e.target.value)} />
+        <input className="p-2 bg-[#222] rounded" placeholder={t("tp2")} value={tp2} onChange={(e) => setTp2(e.target.value)} />
+        <input className="p-2 bg-[#222] rounded" placeholder={t("tp3")} value={tp3} onChange={(e) => setTp3(e.target.value)} />
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button className="w-full p-2 bg-green-600 rounded hover:bg-green-700 transition" onClick={handleSimulate}>{t("simulate")}</button>
+        <button className="w-full p-2 bg-blue-600 rounded hover:bg-blue-700 transition" onClick={() => setShowChart(!showChart)}>
+          {showChart ? t("hidechart") : t("chart")}
         </button>
       </div>
 
-      <div className={`p-4 rounded-xl shadow-lg min-h-screen ${darkMode ? "bg-[#111] text-white" : "bg-white text-black"}`}>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Token (ej: bitcoin)"
-            value={coin}
-            onChange={(e) => setCoin(e.target.value)}
-          />
-          <select
-            className="p-2 bg-[#222] rounded"
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value)}
-          >
-            <option value="1">1D</option>
-            <option value="7">7D</option>
-            <option value="30">30D</option>
-            <option value="90">90D</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Capital (USDT)"
-            value={capital}
-            onChange={(e) => setCapital(e.target.value)}
-          />
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Apalancamiento (ej: 3)"
-            value={leverage}
-            onChange={(e) => setLeverage(e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Entrada"
-            value={entry}
-            onChange={(e) => setEntry(e.target.value)}
-          />
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Stop Loss"
-            value={sl}
-            onChange={(e) => setSl(e.target.value)}
-          />
-          <input
-            className="p-2 bg-[#222] rounded"
-            placeholder="Take Profit"
-            value={tp}
-            onChange={(e) => setTp(e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-between gap-2 mb-4">
-          <button
-            className="w-full p-2 bg-green-600 rounded hover:bg-green-700 transition"
-            onClick={handleSimulate}
-          >
-            Simular Trade
-          </button>
-          <button
-            className="w-full p-2 bg-blue-600 rounded hover:bg-blue-700 transition"
-            onClick={() => setShowChart(!showChart)}
-          >
-            {showChart ? "Ocultar gráfico" : "Ver gráfico"}
-          </button>
-        </div>
-
-        {showChart && (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2 text-center">
-              Gráfico de {coin.toUpperCase()} ({timeframe}D)
-            </h2>
-            <div className="bg-[#222] p-2 rounded">
-              <PriceChart coin={coin} timeframe={timeframe} />
-            </div>
+      {showChart && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2 text-center">{coin.toUpperCase()} ({timeframe}D)</h2>
+          <div className="bg-[#222] p-2 rounded">
+            <PriceChart coin={coin} timeframe={timeframe} />
           </div>
-        )}
+        </div>
+      )}
 
-        {result && (
-          <div className="mt-6 p-4 bg-[#1e1e1e] rounded text-sm space-y-2 border border-green-700">
-            <h3 className="text-base font-semibold text-green-500">
-              📊 Resultado de la simulación
-            </h3>
-            <p>🔻 Riesgo (SL): -{result.loss.toFixed(2)} USDT ({result.lossPct.toFixed(2)}%)</p>
-            <p>🟢 Recompensa (TP): +{result.gain.toFixed(2)} USDT ({result.gainPct.toFixed(2)}%)</p>
-            <p>💀 Liquidación: ${result.liq}</p>
-          </div>
-        )}
-      </div>
+      {result && (
+        <div className="mt-6 p-4 bg-[#1e1e1e] rounded text-sm space-y-2 border border-green-700">
+          <h3 className="text-base font-semibold text-green-500">{t("result")}</h3>
+          <p>{t("sl")}: -{result.loss} USDT ({result.lossPct}%)</p>
+          <p>{t("liq")}: ${result.liq}</p>
+          {result.gains.map((g, i) => (
+            <p key={i}>
+              🎯 {t(`tp${i + 1}`)}: ${g.tp} | +{g.gainUSDT.toFixed(2)} USDT ({g.gainPct.toFixed(2)}%)
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
