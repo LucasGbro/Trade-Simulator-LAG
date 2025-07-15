@@ -129,4 +129,13 @@ const TradeSimulatorApp = () => {
           <h3 className="text-base font-semibold text-green-500">
             📊 Resultado de la simulación
           </h3>
-          <p>🔻 Riesgo (SL): -{result.r
+          <p>🔻 Riesgo (SL): -{result.loss.toFixed(2)} USDT ({result.lossPct.toFixed(2)}%)</p>
+          <p>🟢 Recompensa (TP): +{result.gain.toFixed(2)} USDT ({result.gainPct.toFixed(2)}%)</p>
+          <p>💀 Liquidación: ${result.liq}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TradeSimulatorApp;
